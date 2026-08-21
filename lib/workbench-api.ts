@@ -22,8 +22,8 @@ export async function createCase(organizationId: string, name: string, target: {
   return api<{ ok: true; case: CaseSummary }>(`/api/cases`, { method: 'POST', body: JSON.stringify({ organizationId, name, target }) });
 }
 
-export async function runInvestigation(input: { caseId: string; target: string; targetKind: string; collect: boolean }) {
-  return api<{ ok: true; analysis: string; evidenceCount: number; newEntities: number; model: string }>(`/api/investigate`, { method: 'POST', body: JSON.stringify(input) });
+export async function runInvestigation(input: { caseId?: string; target: string; targetKind: string; collect: boolean }) {
+  return api<{ ok: true; caseId: string; analysis: string; evidenceCount: number; newEntities: number; model: string }>(`/api/investigate`, { method: 'POST', body: JSON.stringify(input) });
 }
 
 export async function getGraph(caseId: string) {
