@@ -14,17 +14,23 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
       - run: npm install
       - run: npx prisma generate
+      - run: npm run prisma:validate
       - run: npm run build
 
-  prisma-schema:
+  production-check:
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+      CRON_SECRET: ${{ secrets.CRON_SECRET }}
+      OIDC_ISSUER_URL: ${{ secrets.OIDC_ISSUER_URL }}
+      DISCOVERY_SEARCH_URL: ${{ secrets.DISCOVERY_SEARCH_URL }}
+      ALERT_WEBHOOK_URL: ${{ secrets.ALERT_WEBHOOK_URL }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm install
-      - run: npx prisma validate
+      - run: npm run production:check
