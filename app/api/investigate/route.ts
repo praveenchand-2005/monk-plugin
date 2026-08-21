@@ -1,16 +1,21 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getAIClient } from '@/lib/openai';
+import { AI_CONFIG, assertAIConfiguration } from '@/lib/ai-config';
 
-const bodySchema = z.object({ target: z.string().min(1).max(500), question: z.string().max(4000).optional() });
+const bodySchema = z.object({
+  target: z.string().trim().min(1).max(500),
+  question: z.string().trim().max(4000).optional(),
+});
 
 export async function POST(request: Request) {
   try {
     const body = bodySchema.parse(await request.json());
+    assertAIConfiguration();
     const client = getAIClient();
 
     const response = await client.chat.completions.create({
-      model: process.env.NVIDIA_MODEL || 'nvidia/nemotron-3-super-120b-a12b',
+      model: AI_CONFIG.model,
       temperature: 0.2,
       top_p: 0.95,
       max_tokens: 4096,
@@ -29,8 +34,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       ok: true,
-      provider: 'nvidia-nim',
-      model: process.env.NVIDIA_MODEL || 'nvidia/nemotron-3-super-120b-a12b',
+      provider: AI_CONFIG.provider,
+      model: AI_CONFIG.model,
       target: body.target,
       analysis: response.choices[0]?.message?.content ?? '',
     });
