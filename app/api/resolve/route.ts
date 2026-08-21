@@ -11,6 +11,9 @@ export async function POST(request: Request) {
     const evidence = await db.evidence.findUnique({ where: { id: body.evidenceId } });
     if (!evidence || evidence.caseId !== body.caseId) return NextResponse.json({ ok: false, error: 'Evidence not found for case' }, { status: 404 });
 
+    const investigationCase = await db.investigationCase.findUnique({ where: { id: body.caseId }, select: { organizationId: true } });
+    if (!investigationCase) return NextResponse.json({ ok: false, error: 'Case not found' }, { status: 404 });
+
     const candidates = extractCandidates(evidence.content || '');
     const created = [];
     for (const candidate of candidates) {
@@ -29,12 +32,12 @@ export async function POST(request: Request) {
 
     await db.auditEvent.create({
       data: {
-        organizationId: evidence.caseId,
+        organizationId: investigationCase.organizationId,
         caseId: body.caseId,
         action: 'entity.candidates.extracted',
         metadata: { evidenceId: body.evidenceId, created: created.length },
       },
-    }).catch(() => undefined);
+    });
 
     return NextResponse.json({ ok: true, candidates, created });
   } catch (error) {
