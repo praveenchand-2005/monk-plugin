@@ -19,21 +19,16 @@ export async function listCases(organizationId: string) {
 }
 
 export async function createCase(organizationId: string, name: string, target: { kind: string; value: string }) {
-  return api<{ ok: true; case: CaseSummary }>(`/api/cases`, {
-    method: 'POST',
-    body: JSON.stringify({ organizationId, name, target }),
-  });
+  return api<{ ok: true; case: CaseSummary }>(`/api/cases`, { method: 'POST', body: JSON.stringify({ organizationId, name, target }) });
 }
 
 export async function runInvestigation(input: { caseId: string; target: string; targetKind: string; collect: boolean }) {
-  return api<{ ok: true; analysis: string; evidenceCount: number; newEntities: number; model: string }>(`/api/investigate`, {
-    method: 'POST',
-    body: JSON.stringify(input),
-  });
+  return api<{ ok: true; analysis: string; evidenceCount: number; newEntities: number; model: string }>(`/api/investigate`, { method: 'POST', body: JSON.stringify(input) });
 }
 
 export async function getGraph(caseId: string) {
-  return api<{ ok: true; entities: any[]; relationships: any[] }>(`/api/cases/${encodeURIComponent(caseId)}/graph`);
+  const result = await api<{ ok: true; graph: { nodes: any[]; edges: any[] } }>(`/api/cases/${encodeURIComponent(caseId)}/graph`);
+  return { ok: result.ok, ...result.graph };
 }
 
 export async function getEvidence(caseId: string) {
