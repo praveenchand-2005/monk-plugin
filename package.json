@@ -1,1 +1,30 @@
-{"name":"enterprise-intelligence-platform","version":"0.3.0","private":true,"scripts":{"dev":"next dev","build":"next build","start":"next start","lint":"next lint","prisma:generate":"prisma generate","prisma:migrate":"prisma migrate dev","prisma:validate":"prisma validate","production:check":"node scripts/production-check.mjs"},"dependencies":{"@prisma/client":"latest","next":"latest","openai":"latest","react":"latest","react-dom":"latest","zod":"latest"},"devDependencies":{"@types/node":"latest","@types/react":"latest","@types/react-dom":"latest","prisma":"latest","typescript":"latest"}}
+{
+  "name": "enterprise-intelligence-platform",
+  "version": "0.3.1",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:validate": "prisma validate",
+    "production:check": "node scripts/production-check.mjs"
+  },
+  "dependencies": {
+    "@prisma/client": "6.19.0",
+    "next": "latest",
+    "openai": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "zod": "latest"
+  },
+  "devDependencies": {
+    "@types/node": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "prisma": "6.19.0",
+    "typescript": "latest"
+  }
+}
