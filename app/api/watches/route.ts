@@ -23,7 +23,7 @@ function nextRun(frequency: 'HOURLY' | 'DAILY' | 'WEEKLY') {
 
 export async function GET(request: NextRequest) {
   try {
-    const ctx = getAuthContext(request);
+    const ctx = await getAuthContext(request);
     const caseId = new URL(request.url).searchParams.get('caseId');
     if (!caseId) return NextResponse.json({ ok: false, error: 'caseId is required' }, { status: 400 });
     await assertCaseAccess(ctx, caseId);
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const ctx = getAuthContext(request);
+    const ctx = await getAuthContext(request);
     if (!canWriteCase(ctx.role)) return NextResponse.json({ ok: false, error: 'Insufficient permissions' }, { status: 403 });
     const body = schema.parse(await request.json());
     await assertCaseAccess(ctx, body.caseId);
