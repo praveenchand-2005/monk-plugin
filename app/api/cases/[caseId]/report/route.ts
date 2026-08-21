@@ -6,7 +6,7 @@ import { buildCaseReport, renderCaseReportHtml } from '@/lib/reporting';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ caseId: string }> }) {
   try {
-    const ctx = getAuthContext(request);
+    const ctx = await getAuthContext(request);
     const { caseId } = await params;
     await assertCaseAccess(ctx, caseId);
     const investigationCase = await db.investigationCase.findUnique({
