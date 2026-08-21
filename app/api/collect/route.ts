@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { db } from '@/lib/db';
 import { getConnector } from '@/lib/connectors';
-import type { TargetKind } from '@/lib/connectors/types';
+import type { TargetKind } from '@/lib/connector-sdk';
 
 const schema = z.object({
   caseId: z.string().min(1),
@@ -17,7 +17,6 @@ export async function POST(request: Request) {
     if (!investigationCase) return NextResponse.json({ ok: false, error: 'Case not found' }, { status: 404 });
 
     const connector = getConnector(body.connectorId);
-    if (!connector) return NextResponse.json({ ok: false, error: 'Connector not found' }, { status: 404 });
     if (!connector.supports(body.target.kind as TargetKind)) {
       return NextResponse.json({ ok: false, error: 'Connector does not support this target type' }, { status: 400 });
     }
