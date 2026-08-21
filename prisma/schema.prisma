@@ -15,6 +15,9 @@ model Organization {
   memberships Membership[]
   cases       InvestigationCase[]
   auditEvents AuditEvent[]
+  watches     Watch[]
+  watchEvents WatchEvent[]
+  watchSnapshots WatchSnapshot[]
 }
 
 model Membership {
@@ -43,6 +46,9 @@ model InvestigationCase {
   relationships  Relationship[]
   findings       Finding[]
   auditEvents    AuditEvent[]
+  watches        Watch[]
+  watchEvents    WatchEvent[]
+  watchSnapshots WatchSnapshot[]
   @@index([organizationId, updatedAt])
 }
 
@@ -83,6 +89,7 @@ model Entity {
   case        InvestigationCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
   relationshipsFrom Relationship[] @relation("fromEntity")
   relationshipsTo   Relationship[] @relation("toEntity")
+  watches           Watch[]
   @@index([caseId, type])
 }
 
@@ -128,4 +135,60 @@ model AuditEvent {
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   case           InvestigationCase? @relation(fields: [caseId], references: [id], onDelete: Cascade)
   @@index([organizationId, createdAt])
+}
+
+model Watch {
+  id             String       @id @default(cuid())
+  organizationId String
+  caseId         String
+  targetEntityId String?
+  name           String
+  frequency      WatchFrequency @default(DAILY)
+  connectorIds   String[]
+  enabled        Boolean      @default(true)
+  nextRunAt      DateTime
+  lastRunAt      DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  case           InvestigationCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  targetEntity   Entity?      @relation(fields: [targetEntityId], references: [id], onDelete: SetNull)
+  events         WatchEvent[]
+  snapshots      WatchSnapshot[]
+  @@index([organizationId, enabled, nextRunAt])
+  @@index([caseId])
+}
+
+enum WatchFrequency { HOURLY DAILY WEEKLY }
+
+model WatchSnapshot {
+  id             String   @id @default(cuid())
+  organizationId String
+  caseId         String
+  watchId        String
+  contentHash    String
+  content        String
+  capturedAt     DateTime @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  case           InvestigationCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  watch          Watch  @relation(fields: [watchId], references: [id], onDelete: Cascade)
+  @@index([watchId, capturedAt])
+}
+
+model WatchEvent {
+  id             String   @id @default(cuid())
+  organizationId String
+  caseId         String
+  watchId        String
+  eventType      String
+  severity       String
+  previousHash   String?
+  currentHash    String?
+  createdAt      DateTime @default(now())
+  acknowledgedAt DateTime?
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  case           InvestigationCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  watch          Watch @relation(fields: [watchId], references: [id], onDelete: Cascade)
+  @@index([organizationId, createdAt])
+  @@index([watchId, createdAt])
 }
