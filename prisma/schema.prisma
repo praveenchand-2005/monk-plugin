@@ -1,0 +1,131 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Organization {
+  id          String       @id @default(cuid())
+  name        String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  memberships Membership[]
+  cases       InvestigationCase[]
+  auditEvents AuditEvent[]
+}
+
+model Membership {
+  id             String       @id @default(cuid())
+  organizationId String
+  userId         String
+  role           Role         @default(ANALYST)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  @@unique([organizationId, userId])
+  @@index([userId])
+}
+
+enum Role { OWNER ADMIN ANALYST REVIEWER VIEWER }
+
+model InvestigationCase {
+  id             String       @id @default(cuid())
+  organizationId String
+  name           String
+  status         CaseStatus   @default(OPEN)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  targets        Target[]
+  evidence       Evidence[]
+  entities       Entity[]
+  relationships  Relationship[]
+  findings       Finding[]
+  auditEvents    AuditEvent[]
+  @@index([organizationId, updatedAt])
+}
+
+enum CaseStatus { OPEN ON_HOLD CLOSED }
+
+model Target {
+  id        String @id @default(cuid())
+  caseId    String
+  kind      String
+  value     String
+  case      InvestigationCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  @@index([caseId])
+}
+
+model Evidence {
+  id          String   @id @default(cuid())
+  caseId      String
+  sourceType  String
+  sourceUrl   String?
+  sourceRef   String?
+  title       String?
+  contentHash String?
+  retrievedAt DateTime @default(now())
+  content     String?
+  metadata    Json?
+  case        InvestigationCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  @@index([caseId, retrievedAt])
+}
+
+model Entity {
+  id          String   @id @default(cuid())
+  caseId      String
+  type        String
+  canonical   String
+  confidence  Int      @default(0)
+  verified    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  case        InvestigationCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  relationshipsFrom Relationship[] @relation("fromEntity")
+  relationshipsTo   Relationship[] @relation("toEntity")
+  @@index([caseId, type])
+}
+
+model Relationship {
+  id             String   @id @default(cuid())
+  caseId         String
+  fromEntityId   String
+  toEntityId     String
+  type           String
+  confidence     Int      @default(0)
+  evidenceIds    String[]
+  createdAt      DateTime @default(now())
+  case           InvestigationCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  fromEntity     Entity @relation("fromEntity", fields: [fromEntityId], references: [id], onDelete: Cascade)
+  toEntity       Entity @relation("toEntity", fields: [toEntityId], references: [id], onDelete: Cascade)
+  @@index([caseId])
+}
+
+model Finding {
+  id             String   @id @default(cuid())
+  caseId         String
+  title          String
+  claim          String
+  confidence     Int
+  status         FindingStatus @default(CANDIDATE)
+  evidenceIds    String[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  case           InvestigationCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  @@index([caseId, status])
+}
+
+enum FindingStatus { CANDIDATE VERIFIED REJECTED }
+
+model AuditEvent {
+  id             String @id @default(cuid())
+  organizationId String
+  caseId         String?
+  userId         String?
+  action         String
+  metadata       Json?
+  createdAt      DateTime @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  case           InvestigationCase? @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  @@index([organizationId, createdAt])
+}
