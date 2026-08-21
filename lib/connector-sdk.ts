@@ -1,10 +1,12 @@
+export type TargetKind = 'person' | 'company' | 'email' | 'phone' | 'username' | 'domain' | 'url' | 'ip' | 'address' | 'custom';
+
 export type ConnectorContext = {
   caseId: string;
-  target: string;
+  target: { kind: TargetKind; value: string };
   signal?: AbortSignal;
 };
 
-export type EvidenceItem = {
+export type EvidenceRecord = {
   sourceType: string;
   sourceUrl?: string;
   sourceRef?: string;
@@ -15,13 +17,14 @@ export type EvidenceItem = {
 
 export type ConnectorResult = {
   connector: string;
-  items: EvidenceItem[];
+  records: EvidenceRecord[];
+  warnings: string[];
 };
 
 export type Connector = {
   id: string;
   name: string;
   description: string;
-  supports: string[];
+  supports(kind: TargetKind): boolean;
   collect(ctx: ConnectorContext): Promise<ConnectorResult>;
 };
