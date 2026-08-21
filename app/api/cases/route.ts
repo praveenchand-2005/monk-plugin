@@ -5,7 +5,7 @@ import { db } from '@/lib/db';
 const createCaseSchema = z.object({
   organizationId: z.string().min(1),
   name: z.string().min(1).max(200),
-  target: z.object({ kind: z.string().min(1).max(40), value: z.string().min(1).max(500) }).optional(),
+  target: z.object({ kind: z.string().min(1).max(40), value: z.string().trim().min(1).max(500) }).optional(),
 });
 
 export async function POST(request: Request) {
@@ -20,12 +20,24 @@ export async function POST(request: Request) {
       include: { targets: true },
     });
 
+    if (body.target) {
+      await db.entity.create({
+        data: {
+          caseId: investigationCase.id,
+          type: body.target.kind,
+          canonical: body.target.value.toLowerCase(),
+          confidence: 100,
+          verified: false,
+        },
+      });
+    }
+
     await db.auditEvent.create({
       data: {
         organizationId: body.organizationId,
         caseId: investigationCase.id,
         action: 'case.created',
-        metadata: { targetKind: body.target?.kind },
+        metadata: { targetKind: body.target?.kind, targetProvided: Boolean(body.target) },
       },
     });
 
