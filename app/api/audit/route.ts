@@ -4,7 +4,7 @@ import { getAuthContext } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
-    const ctx = getAuthContext(request);
+    const ctx = await getAuthContext(request);
     if (!['OWNER', 'ADMIN', 'REVIEWER'].includes(ctx.role)) {
       return NextResponse.json({ ok: false, error: 'Insufficient permissions' }, { status: 403 });
     }
