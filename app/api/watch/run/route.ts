@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'node:crypto';
 import { db } from '@/lib/db';
 import { getConnector } from '@/lib/connectors';
+import { emitWatchAlert } from '@/lib/notifications';
 import type { TargetKind } from '@/lib/connectors/types';
 
 function authorized(request: NextRequest) {
@@ -29,11 +30,12 @@ export async function POST(request: NextRequest) {
     take: 25,
   });
 
-  const results: Array<{ watchId: string; changed: boolean; warning?: string }> = [];
+  const results: Array<{ watchId: string; changed: boolean; warning?: string; alertDelivered?: boolean }> = [];
 
   for (const watch of watches) {
     let changed = false;
     let warning: string | undefined;
+    let alertDelivered = false;
     try {
       const entity = watch.targetEntity;
       if (!entity) throw new Error('Watch target entity not configured');
@@ -63,7 +65,7 @@ export async function POST(request: NextRequest) {
       });
 
       if (changed) {
-        await db.watchEvent.create({
+        const event = await db.watchEvent.create({
           data: {
             organizationId: watch.organizationId,
             caseId: watch.caseId,
@@ -74,10 +76,21 @@ export async function POST(request: NextRequest) {
             currentHash: hash,
           },
         });
+        const alert = await emitWatchAlert({
+          organizationId: watch.organizationId,
+          caseId: watch.caseId,
+          watchId: watch.id,
+          eventId: event.id,
+          eventType: event.eventType,
+          severity: event.severity,
+          message: `Watch "${watch.name}" detected a source change for ${entity.canonical}.`,
+          createdAt: event.createdAt.toISOString(),
+        });
+        alertDelivered = alert.delivered;
       }
     } catch (error) {
       warning = error instanceof Error ? error.message : 'Watch execution failed';
-      await db.watchEvent.create({
+      const event = await db.watchEvent.create({
         data: {
           organizationId: watch.organizationId,
           caseId: watch.caseId,
@@ -86,6 +99,21 @@ export async function POST(request: NextRequest) {
           severity: 'HIGH',
         },
       });
+      try {
+        const alert = await emitWatchAlert({
+          organizationId: watch.organizationId,
+          caseId: watch.caseId,
+          watchId: watch.id,
+          eventId: event.id,
+          eventType: event.eventType,
+          severity: event.severity,
+          message: `Watch "${watch.name}" failed: ${warning}`,
+          createdAt: event.createdAt.toISOString(),
+        });
+        alertDelivered = alert.delivered;
+      } catch {
+        // Preserve the watch execution result even when an external alert sink is unavailable.
+      }
     }
 
     await db.watch.update({ where: { id: watch.id }, data: { lastRunAt: now, nextRunAt: nextRun(watch.frequency, now) } });
@@ -94,10 +122,10 @@ export async function POST(request: NextRequest) {
         organizationId: watch.organizationId,
         caseId: watch.caseId,
         action: 'watch.executed',
-        metadata: { watchId: watch.id, changed, warning },
+        metadata: { watchId: watch.id, changed, warning, alertDelivered },
       },
     });
-    results.push({ watchId: watch.id, changed, warning });
+    results.push({ watchId: watch.id, changed, warning, alertDelivered });
   }
 
   return NextResponse.json({ ok: true, executed: results.length, results });
