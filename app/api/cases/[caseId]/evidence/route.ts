@@ -5,23 +5,13 @@ import { assertCaseAccess } from '@/lib/authorization';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ caseId: string }> }) {
   try {
-    const ctx = getAuthContext(request);
+    const ctx = await getAuthContext(request);
     const { caseId } = await params;
     await assertCaseAccess(ctx, caseId);
     const evidence = await db.evidence.findMany({
       where: { caseId },
       orderBy: { retrievedAt: 'desc' },
-      select: {
-        id: true,
-        sourceType: true,
-        sourceUrl: true,
-        sourceRef: true,
-        title: true,
-        contentHash: true,
-        retrievedAt: true,
-        metadata: true,
-        content: true,
-      },
+      select: { id: true, sourceType: true, sourceUrl: true, sourceRef: true, title: true, contentHash: true, retrievedAt: true, metadata: true, content: true },
     });
     return NextResponse.json({ ok: true, evidence });
   } catch (error) {
