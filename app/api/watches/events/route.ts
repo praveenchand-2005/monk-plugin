@@ -4,7 +4,7 @@ import { getAuthContext } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
-    const ctx = getAuthContext(request);
+    const ctx = await getAuthContext(request);
     const caseId = new URL(request.url).searchParams.get('caseId');
     if (!caseId) return NextResponse.json({ ok: false, error: 'caseId is required' }, { status: 400 });
     const events = await db.watchEvent.findMany({
