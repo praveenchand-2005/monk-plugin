@@ -29,7 +29,7 @@ async function collectOne(caseId: string, organizationId: string, connectorId: s
       sourceRef: record.sourceRef,
       title: record.title,
       content: record.content,
-      metadata: record.metadata,
+      metadata: record.metadata as any,
     })),
   });
   await db.auditEvent.create({ data: { organizationId, caseId, action: 'investigation.collection.completed', metadata: { connectorId, records: result.records.length, warnings: result.warnings } } });
