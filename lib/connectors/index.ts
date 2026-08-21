@@ -1,7 +1,8 @@
 import { webPageConnector } from './web-page';
+import { webSearchConnector } from './web-search';
 import type { Connector } from './types';
 
-const connectors: Connector[] = [webPageConnector];
+const connectors: Connector[] = [webPageConnector, webSearchConnector];
 
 export function getConnectors(): Connector[] {
   return connectors;
