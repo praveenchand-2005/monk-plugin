@@ -35,7 +35,7 @@ export async function POST(request: Request) {
           sourceRef: record.sourceRef,
           title: record.title,
           content: record.content,
-          metadata: record.metadata,
+          metadata: record.metadata as any,
         },
       })),
     );
